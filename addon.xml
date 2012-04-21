@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="script.deluge"
+       name="Deluge Client"
+       version="0.1"
+       provider-name="Jamie Lennox jamielennox@gmail.com">
+  <requires>
+    <import addon="xbmc.python" version="2.0"/>
+    <import addon="xbmc.gui" version="2.11"/>
+  </requires>
+  <extension point="xbmc.python.script" library="addon.py" />
+  <extension point="xbmc.addon.metadata">
+    <platform>all</platform>
+    <summary lang="en">Deluge Client</summary>
+    <description lang="en">Deluge Client</description>
+  </extension>
+</addon>

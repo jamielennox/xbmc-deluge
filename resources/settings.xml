@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+    <setting type="lsep" label="1000" />
+    <setting id="host" type="text" label="1001" default="localhost" />
+    <setting id="port" type="number" label="1002" default="8112" />
+    <setting id="user" type="text" label="1003" default="" />
+    <setting id="password" type="text" option="hidden" label="1004" default="" />
+</settings>
