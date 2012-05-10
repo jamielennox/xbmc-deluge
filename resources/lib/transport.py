@@ -1,4 +1,5 @@
 import socket 
+import ssl
 import rencode
 import zlib
 import time
@@ -17,18 +18,18 @@ class Transport(object):
         self.host = host
         self.port = port
 
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        self.sock = ssl.wrap_socket(s)
         self.sock.connect((self.host, self.port))
 
-        self.ssl = socket.ssl(self.sock)
         self.event_handlers = {} 
-
         self.last_sent = 0
 
     def receive(self): 
         data = ""
         while True:
-            chunk = self.ssl.read(4096)
+            chunk = self.sock.read(4096)
             data += chunk
 
             if len(chunk) == 0: 
@@ -91,7 +92,7 @@ class Transport(object):
         rpc = zlib.compress(rencode.dumps(
                 ((self.request_id, method, args, kwargs),)))
 
-        self.ssl.write(rpc)
+        self.sock.write(rpc)
         return self.receive()
         
     def register_event_handler(self, event, handler): 
@@ -117,6 +118,7 @@ class Transport(object):
                 print "Handler", handler, "does not exist for", event
 
     def login(self, username, password): 
+        # daemon.login returns auth level on success
         return self.send('daemon.login', username, password)
 
     def daemon_info(self):
@@ -139,12 +141,9 @@ class Transport(object):
                 torrent_id, keys, True)
 
     def close(self): 
-        self.ssl.shutdown()
-        self.ssl.close()
+        self.sock.close()
         
         self.sock = None 
-        self.ssl = None 
-        self.ctx = None
         self.host = None 
         self.port = None
 
