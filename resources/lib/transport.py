@@ -10,8 +10,6 @@ class RPC:
 
 class Transport(object): 
 
-    last_sent = 0
-
     def __init__(self, host, port, request_id = 0): 
 
         self.request_id = request_id
@@ -24,6 +22,8 @@ class Transport(object):
 
         self.ssl = socket.ssl(self.sock)
         self.event_handlers = {} 
+
+        self.last_sent = 0
 
     def receive(self): 
         data = ""
@@ -49,8 +49,8 @@ class Transport(object):
 
                     if response[0] == RPC.Response: 
                         # response[1] is the triggering message_id
-                        if response[1] != Transport.last_sent:
-                            print "Last sent inconsistent", response[1], "not", Transport.last_sent
+                        if response[1] != self.last_sent:
+                            print "Last sent inconsistent", response[1], "not", self.last_sent
 
                         return response[2]
                     
@@ -86,7 +86,7 @@ class Transport(object):
     def send(self, method, *args, **kwargs): 
         self.request_id += 1
         
-        Transport.last_sent = self.request_id
+        self.last_sent = self.request_id
 
         rpc = zlib.compress(rencode.dumps(
                 ((self.request_id, method, args, kwargs),)))
