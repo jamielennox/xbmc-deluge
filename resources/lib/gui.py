@@ -84,28 +84,47 @@ class DelugeGui(gui_base):
         gui_base.onInit(self)
         self.items = []
         self.repeater = Repeater(1.0, self.update)
+        self.client = Client()
+        self.doConnect()
         
+    def doConnect(self): 
+        def loginFailed():
+            if xbmcgui.Dialog().yesno('Deluge Error', 'Unable to Connect', 'Open Settings'):
+                __settings__.openSettings()
+
+            if xbmcgui.Dialog().yesno('Retry', 'Retry Connection?'):
+                self.doConnect()
+
+        host = __settings__.getSetting('host')
         p = xbmcgui.DialogProgress()
-        p.create('Deluge', 'Connecting to Deluge')
-        #self.client = Client("192.168.1.2", 58846, "jamie", "55588688")
+        p.create('Deluge', "Connecting to Deluge on %s" % host)
         
-        #try:
-        self.client = Client(__settings__.getSetting('host'),
-                int(__settings__.getSetting('port')),
-                __settings__.getSetting('user'),
-                __settings__.getSetting('password'))
-        #except:
-        p.close()
-        #    self.close()
+        try:
+            #self.client.connect("192.168.1.2", 58846, "jamie", "55588688")
+            if not self.client.connect(host,
+                    int(__settings__.getSetting('port')),
+                    __settings__.getSetting('user'),
+                    __settings__.getSetting('password')):
+                loginFailed()
 
-        #    (type, e, traceback) = sys.exc_info()
+        except:
+            p.close()
+            self.close()
 
-        #    print "Connect Error", type, e, traceback
+            (type, e, traceback) = sys.exc_info()
 
-        #    if xbmcgui.Dialog().yesno('Deluge Error', 'Unable to Connect', 'Open Settings'):
-        #        __settings__.openSettings()
-        #else:
-        self.repeater.start(daemon = True)
+            print "Connect Error", type, e, traceback
+            loginFailed()
+
+        else:
+            if p.iscanceled(): 
+                print "LOGIN CANCELLED"
+                p.close()
+                self.close()
+            else:
+                self.update()
+                p.close()
+                self.repeater.start(daemon = True)
 
     def start(self):
         self.update()
