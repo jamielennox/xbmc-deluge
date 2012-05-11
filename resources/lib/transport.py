@@ -1,6 +1,6 @@
 import socket 
 import ssl
-import rencode
+import deluge.rencode as rencode
 import zlib
 import time
 
