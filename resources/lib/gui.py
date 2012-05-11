@@ -1,6 +1,7 @@
 import sys
 
 from repeater import Repeater 
+from control import Control
 from client import Client 
 
 standalone = __name__ == '__main__'
@@ -171,7 +172,27 @@ class DelugeGui(gui_base):
         gui_base.close(self) 
 
     def onClick(self, controlID): 
-        pass
+        selected_torrent = self.getControl(Control.TorrentList)
+        print "selected_torrent is", selected_torrent
+
+        if controlID == Control.Add: 
+            filename = xbmcgui.Dialog().browse(1, 'Find Torrent', 'files', '.torrent') 
+            
+            if filename is None: 
+                return 
+
+            print "Using filename: %s" % filename 
+            if self.client.add_torrent(filename) is None: 
+                xbmcgui.Dialog().ok("Failed", "Failed to add: %s" % filename)
+
+        elif controlID == Control.Remove: 
+            print "REMOVE TORRENT" 
+        elif controlID == Control.Play: 
+            print "PLAY TORRENT" 
+        elif controlID == Control.Pause: 
+            print "PAUSE TORRENT" 
+        else: 
+            print "Unhandled control", controlID
 
     def onFocus(self, controlID): 
         pass

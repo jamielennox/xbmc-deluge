@@ -1,4 +1,5 @@
 from transport import Transport 
+import base64
 
 class Client: 
 
@@ -60,6 +61,20 @@ class Client:
         for torr_id, vals in self.transport.torrent_status(None, self.torrent_keys).iteritems():
             self.torrents.setdefault(torr_id, {}).update(vals)
 
+    def add_torrent(self, filename): 
+        torrent_id = None 
+
+        try: 
+            with open(filename, 'rb') as f: 
+                data = base64.b64encode(f.read())
+        except IOError, e: 
+            print "Failed to open torrent file:", e
+        else: 
+            torrent_id = self.transport.send('core.add_torrent_file', filename, data, None)
+            print "New torrent_id is: %s", torrent_id
+
+        return torrent_id
+        
     def _on_torrent_state_changed(self, torrent_id, state): 
         print "torrent state changed", torrent_id, state
 
@@ -68,5 +83,4 @@ class Client:
 
     def _on_torrent_removed(self, torrent_id): 
         print "torrent removed", torrent_id
-
 
