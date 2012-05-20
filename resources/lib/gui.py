@@ -13,6 +13,7 @@ CANCEL_DIALOG = EXIT_SCRIPT + ( 216, 257, 61448, )
 
 import xbmc
 import xbmcgui
+import details
 import Queue
 import threading
 import traceback
@@ -90,7 +91,9 @@ class DelugeGui(xbmcgui.WindowXML):
 
             return -1 if a < b else 1
 
-        while True:
+        running = True
+
+        while running:
             try:
                 msg_type, msg_args = self.queue.get(True, 1.0)
             except Queue.Empty:
@@ -106,6 +109,7 @@ class DelugeGui(xbmcgui.WindowXML):
                         traceback.print_exc()
 
                 elif msg_type == MessageType.EXIT:
+                    running = False
                     break
 
             torrents = self.client.update()
@@ -156,14 +160,22 @@ class DelugeGui(xbmcgui.WindowXML):
                 self.enqueue(self.client.remove_torrent, torrent_id, remove_data)
 
         elif controlID == Control.Play:
-            print "PLAY TORRENT"
             torrent_id = selected_torrent.getProperty('TorrentID')
             self.enqueue(self.client.resume_torrent, torrent_id)
 
         elif controlID == Control.Pause:
-            print "PAUSE TORRENT"
             torrent_id = selected_torrent.getProperty('TorrentID')
             self.enqueue(self.client.pause_torrent, torrent_id)
+
+        elif controlID == Control.TorrentList:
+            torrent_id = selected_torrent.getProperty('TorrentID')
+
+            w = details.DelugeDetailsGui("script-deluge-details.xml",
+                    __settings__.getAddonInfo('path') , "Default")
+            w.set_torrent(self.client, torrent_id)
+            #w.setTorrent(self.transmission, int(item.getProperty('TorrentID')))
+            w.doModal()
+            del w
 
         else:
             print "Unhandled control", controlID

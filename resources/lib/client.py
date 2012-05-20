@@ -10,7 +10,7 @@ class Client:
         self.transport = None
         self.torrents = {}
         self.torrent_keys = [ 'queue', 'name', 'total_size',
-                'state', 'progress', 'num_seeds' ]
+                'state', 'progress', 'num_seeds', 'files' ]
 
     def connect(self, host="127.0.0.1", port=58846, username="", password=""):
         self.transport = Transport(host, port)
