@@ -3,6 +3,7 @@ import ssl
 import select
 import deluge.rencode as rencode
 import zlib
+import xbmc
 import time
 import threading
 import datetime
@@ -44,7 +45,7 @@ class Transport(object):
             try:
                 chunk = self.sock.read(4096)
             except ssl.SSLError, e:
-                xmbc.log("Deluge: Read Error: %s" % e.message,
+                xbmc.log("Deluge: Read Error: %s" % e.message,
                         xbmc.LOGWARNING)
                 break
 
@@ -85,8 +86,9 @@ class Transport(object):
                         # response[2] is the exception type
                         # response[3] is the exception args
                         # response[4] is the exception kwargs
-                        xbmc.log("Deluge: Received Exception - %s" % response,
-                                xbmc.LOGWARNING)
+                        exc_type, exc_msg, exc_tb = response[2]
+                        xbmc.log("Deluge: Received Exception - %s: %s" % (exc_type, exc_msg), xbmc.LOGWARNING)
+                        xbmc.log("Deluge: %s" % exc_tb, xbmc.LOGWARNING)
 
                     elif response[0] == RPC.Event:
                         # response[1] is the event type

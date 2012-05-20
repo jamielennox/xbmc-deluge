@@ -74,31 +74,42 @@ class Client:
     def remove_torrent(self, torrent_id, with_data = False):
         ret = self.transport.send('core.remove_torrent', torrent_id, with_data)
 
-        print "Remove returned", ret
+        # I'm not sure what happens here. It appears that the server
+        # is not returning data after a remove_torrent event
 
-        if ret:
+        if not ret:
             try:
-                del self.torrents[torrent_id]
-                print "Successfully removed torrent id", torrent_id
+                name = self.torrents[torrent_id]['name']
             except KeyError:
-                pass
-                print "Failed to remove torrent_id", torrent_id
-        else:
-            xbmcgui.Dialog().ok("Failed", "Failed to remove: %s" % self.torrents[torrent_id]['name'])
+                name = torrent_id
+
+            xbmcgui.Dialog().ok("Failed", "Failed to remove: %s" % name)
 
         return ret
 
+    def resume_torrent(self, torrent_id):
+        xbmc.log("Resume torrent: %s" % torrent_id, xbmc.LOGDEBUG)
+        return self.transport.send('core.resume_torrent', [torrent_id])
+
+    def pause_torrent(self, torrent_id):
+        xbmc.log("Pause torrent: %s" % torrent_id, xbmc.LOGDEBUG)
+        return self.transport.send('core.pause_torrent', [torrent_id])
+
     def _on_torrent_state_changed(self, torrent_id, state):
-        print "torrent state changed", torrent_id, state
+        xbmc.log("torrent state changed: %s -> state" % (torrent_id, state),
+                xbmc.LOGDEBUG)
 
     def _on_torrent_added(self, torrent_id):
-        print "torrent added", torrent_id
-        self.torrents[torrent_id] = {}
+        xbmc.log("torrent added: %s" % torrent_id, xbmc.LOGDEBUG)
+        if not torrent_id in self.torrents:
+            self.torrents[torrent_id] = {}
 
     def _on_torrent_removed(self, torrent_id):
-        print "torrent removed", torrent_id
+        xbmc.log("torrent removed: %s" % torrent_id, xbmc.LOGDEBUG)
+
         try:
             del self.torrents[torrent_id]
         except KeyError:
-            pass
+            xbmc.log("Failed to remove torrent_id: %s" % torrent_id,
+                    xbmc.LOGWARNING)
 

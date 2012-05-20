@@ -15,6 +15,7 @@ import xbmc
 import xbmcgui
 import Queue
 import threading
+import traceback
 
 from strings import *
 
@@ -102,6 +103,7 @@ class DelugeGui(xbmcgui.WindowXML):
                     except Exception, e:
                         xbmc.log("Deluge: Failed to run client method: %s" % e.message,
                                 xbmc.LOGWARNING)
+                        traceback.print_exc()
 
                 elif msg_type == MessageType.EXIT:
                     break
@@ -141,10 +143,8 @@ class DelugeGui(xbmcgui.WindowXML):
 
         if controlID == Control.Add:
             filename = xbmcgui.Dialog().browse(1, 'Find Torrent', 'files', '.torrent')
-            if filename is None:
-                return
-
-            self.enqueue(self.client.add_torrent, filename)
+            if not filename in (None, ''):
+                self.enqueue(self.client.add_torrent, filename)
 
         elif controlID == Control.Remove:
             if not selected_torrent:
@@ -157,9 +157,13 @@ class DelugeGui(xbmcgui.WindowXML):
 
         elif controlID == Control.Play:
             print "PLAY TORRENT"
+            torrent_id = selected_torrent.getProperty('TorrentID')
+            self.enqueue(self.client.resume_torrent, torrent_id)
 
         elif controlID == Control.Pause:
             print "PAUSE TORRENT"
+            torrent_id = selected_torrent.getProperty('TorrentID')
+            self.enqueue(self.client.pause_torrent, torrent_id)
 
         else:
             print "Unhandled control", controlID
