@@ -1,10 +1,11 @@
 <?xml version ="1.0" encod ing="u tf-8" standa lone=" yes"?>
 <strings>
-    <string id="100">Deluge Client</string>
+    <string id="30000">Deluge Client</string>
 
-    <string id="1001">Hostname</string> 
-    <string id="1002">Port</string> 
-    <string id="1003">Username</string> 
-    <string id="1004">Password</string> 
+    <!-- Settings --> 
+    <string id="30101">Hostname</string> 
+    <string id="30102">Port</string> 
+    <string id="30103">Username</string> 
+    <string id="30104">Password</string> 
 </strings>
 

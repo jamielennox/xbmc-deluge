@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
-    <setting type="lsep" label="1000" />
-    <setting id="host" type="text" label="1001" default="localhost" />
-    <setting id="port" type="number" label="1002" default="8112" />
-    <setting id="user" type="text" label="1003" default="" />
-    <setting id="password" type="text" option="hidden" label="1004" default="" />
+    <category label="Server">
+        <setting type="lsep" label="30000" />
+        <setting id="host" type="text" label="30101" default="localhost" />
+        <setting id="port" type="number" label="30102" default="58849" />
+        <setting id="user" type="text" label="30103" default="" />
+        <setting id="password" type="text" option="hidden" label="30104" default="" />
+    </category>
 </settings>

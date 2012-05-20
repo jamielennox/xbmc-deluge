@@ -1,37 +1,25 @@
-from transport import Transport 
+from transport import Transport
 import base64
 
-class Client: 
+import xbmc
+import xbmcgui
 
-    class AlreadyConnected(Exception): 
-        def __init__(self, host, port, username): 
-            self.host = host
-            self.port = port 
-            self.username = username 
+class Client:
 
-        def __repr__(self): 
-            return "Exception: Already connected to %s@%s:%d" % (self.username, self.host, self.port)
-
-    class NoConnection(Exception): 
-        pass
-
-    def __init__(self): 
-        self.transport = None 
+    def __init__(self):
+        self.transport = None
         self.torrents = {}
         self.torrent_keys = [ 'queue', 'name', 'total_size',
                 'state', 'progress', 'num_seeds' ]
 
     def connect(self, host="127.0.0.1", port=58846, username="", password=""):
-        if self.transport: 
-            raise Client.AlreadyConnected(self.transport.host, self.transport.port, self.transport.username)
-
         self.transport = Transport(host, port)
-        
-        try: 
-            r = self.transport.login(username, password) 
+
+        try:
+            r = self.transport.login(username, password)
         except Exception, e:
             print "login failed", e
-            self.transport = None 
+            self.transport = None
             return False
 
         print "Protocol version", self.transport.daemon_info()
@@ -41,46 +29,76 @@ class Client:
                 ('TorrentRemovedEvent', self._on_torrent_removed),
                 ('TorrentAddedEvent', self._on_torrent_added) ]:
 
-            if not self.transport.register_event_handler(event, handler): 
+            if not self.transport.register_event_handler(event, handler):
                 print "Failed to register handler", event, handler
 
         self.torrents = self.transport.torrent_status(None, self.torrent_keys)
         return True
 
-    def disconnect(self): 
-        if self.transport: 
+    def disconnect(self):
+        if self.transport:
             self.torrents = {}
-            self.transport.close() 
+            self.transport.close()
 
         self.transport = None
-   
-    def update(self):  
-        if not self.transport: 
-            raise Client.NoConnection() 
 
-        for torr_id, vals in self.transport.torrent_status(None, self.torrent_keys).iteritems():
-            self.torrents.setdefault(torr_id, {}).update(vals)
+    def update(self):
+        updates = self.transport.torrent_status(None, self.torrent_keys)
 
-    def add_torrent(self, filename): 
-        torrent_id = None 
+        if updates:
+            for torr_id, vals in updates.iteritems():
+                try:
+                    #self.torrents.setdefault(torr_id, {}).update(vals)
+                    self.torrents[torr_id].update(vals)
+                except KeyError:
+                    print "Receiving updates for unexpected torrent", torr_id
+        else:
+            print "Update checking failed"
 
-        try: 
-            with open(filename, 'rb') as f: 
+        return self.torrents
+
+    def add_torrent(self, filename):
+        torrent_id = None
+
+        try:
+            with open(filename, 'rb') as f:
                 data = base64.b64encode(f.read())
-        except IOError, e: 
+        except IOError, e:
             print "Failed to open torrent file:", e
-        else: 
+            xbmcgui.Dialog().ok("Failed", "Failed to add: %s" % filename)
+        else:
             torrent_id = self.transport.send('core.add_torrent_file', filename, data, None)
-            print "New torrent_id is: %s", torrent_id
 
         return torrent_id
-        
-    def _on_torrent_state_changed(self, torrent_id, state): 
+
+    def remove_torrent(self, torrent_id, with_data = False):
+        ret = self.transport.send('core.remove_torrent', torrent_id, with_data)
+
+        print "Remove returned", ret
+
+        if ret:
+            try:
+                del self.torrents[torrent_id]
+                print "Successfully removed torrent id", torrent_id
+            except KeyError:
+                pass
+                print "Failed to remove torrent_id", torrent_id
+        else:
+            xbmcgui.Dialog().ok("Failed", "Failed to remove: %s" % self.torrents[torrent_id]['name'])
+
+        return ret
+
+    def _on_torrent_state_changed(self, torrent_id, state):
         print "torrent state changed", torrent_id, state
 
-    def _on_torrent_added(self, torrent_id, state): 
-        print "torrent added", torrent_id, state
+    def _on_torrent_added(self, torrent_id):
+        print "torrent added", torrent_id
+        self.torrents[torrent_id] = {}
 
-    def _on_torrent_removed(self, torrent_id): 
+    def _on_torrent_removed(self, torrent_id):
         print "torrent removed", torrent_id
+        try:
+            del self.torrents[torrent_id]
+        except KeyError:
+            pass
 

@@ -1,10 +1,8 @@
 import sys
+import time
 
-from repeater import Repeater 
 from control import Control
-from client import Client 
-
-standalone = __name__ == '__main__'
+from client import Client
 
 KEY_BUTTON_BACK = 275
 KEY_KEYBOARD_ESC = 61467
@@ -13,100 +11,54 @@ KEY_MENU_ID = 92
 EXIT_SCRIPT = ( 6, 10, 247, 275, 61467, 216, 257, 61448, )
 CANCEL_DIALOG = EXIT_SCRIPT + ( 216, 257, 61448, )
 
-if standalone:
-    import pprint
-    class FakeList(object): 
-        def __init__(self): 
-            self.reset()
+import xbmc
+import xbmcgui
+import Queue
+import threading
 
-        def reset(self): 
-            self.items = []
+from strings import *
 
-        def addItem(self, item): 
-            self.items.append(item)
+_ = sys.modules["__main__"].__language__
+__settings__ = sys.modules["__main__"].__settings__
 
-        def addItems(self, items): 
-            self.items.extend(items)
+class MessageType:
+    METHOD = 1
+    EXIT = 2
 
-        def setEnabled(self, v): 
-            pprint.pprint(self.items)
-
-    class FakeListItem(object): 
-        def __init__(self): 
-            self.properties = {} 
-        
-        def setProperty(self, k, v): 
-            self.properties[k] = v 
-
-        def getControl(self, item): 
-            return None
-
-        def __repr__(self): 
-            return self.properties.__repr__()
-            
-        def setLabel(self, v):
-            self.properties['label'] = v
-
-    class FakeWindow(object): 
-        def onInit(self): 
-            self.tor_list = FakeList() 
-
-        def close(self):
-            pass
-        
-        def getControl(self, item): 
-            if item == 120: 
-                return self.tor_list
-            else:
-                return None
-
-    gui_base = FakeWindow
-    list_item = FakeListItem
-else:
-    import xbmc 
-    import xbmcgui 
-    from strings import * 
-
-    _ = sys.modules[ "__main__" ].__language__
-    __settings__ = sys.modules[ "__main__" ].__settings__
-
-    gui_base = xbmcgui.WindowXML
-    list_item = xbmcgui.ListItem
-
-class DelugeGui(gui_base):
+class DelugeGui(xbmcgui.WindowXML):
 
     status_icons = {
-        'Paused' : 'paused.png', 
-        'Seeding' : 'seeding.png', 
+        'Paused' : 'paused.png',
+        'Seeding' : 'seeding.png',
         'Downloading' : 'down.png'
-    } 
+    }
 
     def onInit(self):
-        gui_base.onInit(self)
+        xbmcgui.WindowXML.onInit(self)
+        self.queue = Queue.Queue()
+        self.thread = threading.Thread(target=self.update)
+
         self.items = []
-        self.repeater = Repeater(1.0, self.update)
         self.client = Client()
         self.doConnect()
-        
-    def doConnect(self): 
+
+    def doConnect(self):
         def loginFailed():
             if xbmcgui.Dialog().yesno('Deluge Error', 'Unable to Connect', 'Open Settings'):
                 __settings__.openSettings()
-
-            if xbmcgui.Dialog().yesno('Retry', 'Retry Connection?'):
                 self.doConnect()
 
         host = __settings__.getSetting('host')
         p = xbmcgui.DialogProgress()
         p.create('Deluge', "Connecting to Deluge on %s" % host)
-        
+
         try:
-            #self.client.connect("192.168.1.2", 58846, "jamie", "55588688")
             if not self.client.connect(host,
                     int(__settings__.getSetting('port')),
                     __settings__.getSetting('user'),
                     __settings__.getSetting('password')):
                 loginFailed()
+                return
 
         except:
             p.close()
@@ -118,21 +70,16 @@ class DelugeGui(gui_base):
             loginFailed()
 
         else:
-            if p.iscanceled(): 
+            if p.iscanceled():
                 print "LOGIN CANCELLED"
                 p.close()
                 self.close()
             else:
-                self.update()
                 p.close()
-                self.repeater.start(daemon = True)
+                self.thread.start()
 
-    def start(self):
-        self.update()
-
-    def update(self): 
-        
-        def torr_cmp(_a, _b): 
+    def update(self):
+        def torr_cmp(_a, _b):
             a = torrents[_a]['queue']
             b = torrents[_b]['queue']
 
@@ -142,71 +89,86 @@ class DelugeGui(gui_base):
 
             return -1 if a < b else 1
 
-        self.client.update()
-        torrents = self.client.torrents
-        torrent_keys = sorted(torrents, torr_cmp)
-        tor_list = self.getControl(120)
+        while True:
+            try:
+                msg_type, msg_args = self.queue.get(True, 1.0)
+            except Queue.Empty:
+                pass
+            else:
+                if msg_type == MessageType.METHOD:
+                    try:
+                        method, args, kwargs = msg_args
+                        method(*args, **kwargs)
+                    except Exception, e:
+                        xbmc.log("Deluge: Failed to run client method: %s" % e.message,
+                                xbmc.LOGWARNING)
 
-        count = len(torrent_keys)
-        if count != len(self.items): 
-            tor_list.reset()
-            self.items = [ list_item() for u in range(count) ]
-            tor_list.addItems(self.items)
+                elif msg_type == MessageType.EXIT:
+                    break
 
-        for key, item in zip(torrent_keys, self.items): 
-            torrent = torrents[key]
+            torrents = self.client.update()
+            torrent_keys = sorted(torrents, torr_cmp)
+            tor_list = self.getControl(Control.TorrentList)
 
-            item.setLabel(torrent['name'])
-            item.setProperty('TorrentID', key)
-            item.setProperty('TorrentStatusIcon', 
-                    DelugeGui.status_icons.get(torrent['state'], 'default.png'))
-            item.setProperty('TorrentProgress', "%.2f" % torrent['progress'])
+            count = len(torrent_keys)
+            if count != len(self.items):
+                tor_list.reset()
+                self.items = [ xbmcgui.ListItem() for u in range(count) ]
+                tor_list.addItems(self.items)
 
-            if standalone: 
-                item.setProperty('raw', torrent)
-        
-        tor_list.setEnabled(count > 0) 
-        
-    def close(self): 
-        self.repeater.stop() 
-        gui_base.close(self) 
+            for key, item in zip(torrent_keys, self.items):
+                torrent = torrents[key]
 
-    def onClick(self, controlID): 
-        selected_torrent = self.getControl(Control.TorrentList)
-        print "selected_torrent is", selected_torrent
+                item.setLabel(torrent['name'])
+                item.setProperty('TorrentID', key)
+                item.setProperty('TorrentStatusIcon',
+                        DelugeGui.status_icons.get(torrent['state'], 'default.png'))
+                item.setProperty('TorrentProgress', "%.2f" % torrent['progress'])
 
-        if controlID == Control.Add: 
-            filename = xbmcgui.Dialog().browse(1, 'Find Torrent', 'files', '.torrent') 
-            
-            if filename is None: 
-                return 
+            tor_list.setEnabled(count > 0)
 
-            print "Using filename: %s" % filename 
-            if self.client.add_torrent(filename) is None: 
-                xbmcgui.Dialog().ok("Failed", "Failed to add: %s" % filename)
+    def enqueue(self, method, *args, **kwargs):
+        self.queue.put((MessageType.METHOD, (method, args, kwargs)))
 
-        elif controlID == Control.Remove: 
-            print "REMOVE TORRENT" 
-        elif controlID == Control.Play: 
-            print "PLAY TORRENT" 
-        elif controlID == Control.Pause: 
-            print "PAUSE TORRENT" 
-        else: 
+    def close(self):
+        self.queue.put((MessageType.EXIT, None))
+        self.thread.join()
+
+        xbmcgui.WindowXML.close(self)
+
+    def onClick(self, controlID):
+        selected_torrent = self.getControl(Control.TorrentList).getSelectedItem()
+
+        if controlID == Control.Add:
+            filename = xbmcgui.Dialog().browse(1, 'Find Torrent', 'files', '.torrent')
+            if filename is None:
+                return
+
+            self.enqueue(self.client.add_torrent, filename)
+
+        elif controlID == Control.Remove:
+            if not selected_torrent:
+                return
+
+            torrent_id = selected_torrent.getProperty('TorrentID')
+            if xbmcgui.Dialog().yesno("Remove", "Do you really want to remove %s" % self.client.torrents[torrent_id]['name']):
+                remove_data = xbmcgui.Dialog().yesno("Remove Data", "Remove data as well?")
+                self.enqueue(self.client.remove_torrent, torrent_id, remove_data)
+
+        elif controlID == Control.Play:
+            print "PLAY TORRENT"
+
+        elif controlID == Control.Pause:
+            print "PAUSE TORRENT"
+
+        else:
             print "Unhandled control", controlID
 
-    def onFocus(self, controlID): 
+    def onFocus(self, controlID):
         pass
 
-    def onAction(self, action): 
+    def onAction(self, action):
         if (action.getButtonCode() in CANCEL_DIALOG) or (action.getId() == KEY_MENU_ID):
             self.close()
 
-if standalone:
-    import time 
 
-    gui = DelugeGui()
-    gui.onInit()
-    time.sleep(5)
-    gui.close()
-
-    
