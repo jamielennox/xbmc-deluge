@@ -15,6 +15,8 @@ class RPC:
 
 class Transport(object):
 
+    read_size = 4096
+
     def __init__(self, host, port, request_id = 0):
 
         self.request_id = request_id
@@ -43,9 +45,9 @@ class Transport(object):
             #    break
 
             try:
-                chunk = self.sock.read(4096)
+                chunk = self.sock.read(Transport.read_size)
             except ssl.SSLError, e:
-                xbmc.log("Deluge: Read Error: %s" % e.message,
+                xbmc.log("Deluge: Read Error: %s" % e,
                         xbmc.LOGWARNING)
                 break
 
@@ -60,8 +62,14 @@ class Transport(object):
             try:
                 response = rencode.loads(dobj.decompress(data))
             except Exception, e:
-                xbmc.log("Deluge: Failed to decompress chunk: %s" % e.message,
-                        xbmc.LOGWARNING)
+                # this probably just means that the sock recv was smaller
+                # than the message size and so didn't get enought data to
+                # decode. Get more data.
+
+                if len(chunk) != Transport.read_size:
+                    xbmc.log("Deluge: Failed to decompress chunk: %s" % e,
+                            xbmc.LOGWARNING)
+
                 continue
 
             else:

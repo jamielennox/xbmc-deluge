@@ -32,7 +32,7 @@ class DelugeDetailsGui(xbmcgui.WindowXML):
         status = self.getControl(Control.Status)
         file_list = self.getControl(Control.FileList)
 
-        while first or not self.close_event.wait(1.0):
+        while first or not xbmc.abortRequested or not self.close_event.wait(1.0):
             torrent = self.client.update()[self.torrent_id]
 
             name.setLabel(torrent['name'])

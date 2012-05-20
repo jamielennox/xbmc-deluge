@@ -93,7 +93,7 @@ class DelugeGui(xbmcgui.WindowXML):
 
         running = True
 
-        while running:
+        while running and not xbmc.abortRequested:
             try:
                 msg_type, msg_args = self.queue.get(True, 1.0)
             except Queue.Empty:
