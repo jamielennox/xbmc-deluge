@@ -1,4 +1,5 @@
 
+
 class Control:
 
     # Main Window
@@ -10,7 +11,6 @@ class Control:
 
     TorrentList = 120
 
-
     # Details Window
 
     Name = 201
@@ -18,3 +18,10 @@ class Control:
     Progress = 203
     FileList = 204
 
+    # Session Info
+
+    Connections = 151
+    DownloadSpeed = 152
+    UploadSpeed = 153
+    TrafficSpeed = 154
+    DHT = 155

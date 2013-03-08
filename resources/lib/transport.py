@@ -1,23 +1,22 @@
 import socket
 import ssl
-import select
 import deluge.rencode as rencode
 import zlib
 import xbmc
-import time
 import threading
-import datetime
+
 
 class RPC:
     Response = 1
     Error = 2
     Event = 3
 
+
 class Transport(object):
 
     read_size = 4096
 
-    def __init__(self, host, port, request_id = 0):
+    def __init__(self, host, port, request_id=0):
 
         self.request_id = request_id
 
@@ -186,6 +185,9 @@ class Transport(object):
         method = 's' if torrent_id is None or type(torrent_id) is dict else ''
         return self.send("core.get_torrent%s_status" % method,
                 torrent_id, keys, True)
+
+    def session_status(self, keys):
+        return self.send("core.get_session_status", keys)
 
     def close(self):
         self.sock.close()

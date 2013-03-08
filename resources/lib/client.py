@@ -4,13 +4,17 @@ import base64
 import xbmc
 import xbmcgui
 
+
 class Client:
 
     def __init__(self):
         self.transport = None
         self.torrents = {}
-        self.torrent_keys = [ 'queue', 'name', 'total_size',
-                'state', 'progress', 'num_seeds', 'files' ]
+        self.torrent_keys = ['queue', 'name', 'total_size',
+                'state', 'progress', 'num_seeds', 'files',
+                'download_payload_rate', 'upload_payload_rate']
+        self.session_keys = ['download_rate', 'payload_download_rate',
+                'upload_rate', 'payload_upload_rate']
 
     def connect(self, host="127.0.0.1", port=58846, username="", password=""):
         self.transport = Transport(host, port)
@@ -22,12 +26,13 @@ class Client:
             self.transport = None
             return False
 
+        print "login infor is r", r
         print "Protocol version", self.transport.daemon_info()
 
         for event, handler in [
                 ('TorrentStateChangedEvent', self._on_torrent_state_changed),
                 ('TorrentRemovedEvent', self._on_torrent_removed),
-                ('TorrentAddedEvent', self._on_torrent_added) ]:
+                ('TorrentAddedEvent', self._on_torrent_added)]:
 
             if not self.transport.register_event_handler(event, handler):
                 print "Failed to register handler", event, handler
@@ -42,7 +47,7 @@ class Client:
 
         self.transport = None
 
-    def update(self):
+    def update_torrents(self):
         updates = self.transport.torrent_status(None, self.torrent_keys)
 
         if updates:
@@ -56,6 +61,9 @@ class Client:
             print "Update checking failed"
 
         return self.torrents
+
+    def update_session(self):
+        return self.transport.session_status(self.session_keys)
 
     def add_torrent(self, filename):
         torrent_id = None
@@ -71,7 +79,7 @@ class Client:
 
         return torrent_id
 
-    def remove_torrent(self, torrent_id, with_data = False):
+    def remove_torrent(self, torrent_id, with_data=False):
         ret = self.transport.send('core.remove_torrent', torrent_id, with_data)
 
         # I'm not sure what happens here. It appears that the server

@@ -3,8 +3,8 @@
     <defaultcontrol always="true">120</defaultcontrol>
     <coordinates>
         <system>1</system>
-        <posx>120</posx>
-        <posy>50</posy> 
+        <!-- <posx>120</posx> -->
+        <!-- <posy>50</posy>  -->
     </coordinates>
     <controls>
     <!--
@@ -30,6 +30,8 @@
         </control>
         -->
         <control type="group" id="110"> 
+            <posx>120</posx> 
+            <posy>50</posy> 
             <control type="button" id="111"> 
                 <posx>0</posx>
                 <posy>10</posy> 
@@ -103,15 +105,18 @@
         </control> 
         <control type="list" id="120">
             <description>Torrent list</description>
-            <posx>145</posx>
-            <posy>0</posy>
+            <posx>255</posx>
+            <posy>50</posy>
             <width>900</width>
-            <height>630</height>
+            <height>560</height>
             <viewtype label="Torrent List">list</viewtype>
             <orientation>vertical</orientation>
             <visible>true</visible>
             <onleft>110</onleft>
-            <itemlayout width="600" height="70">
+            <onright>121</onright> 
+            <viewtype>list</viewtype>  
+            <pagecontrol>121</pagecontrol> 
+            <itemlayout width="900" height="70">
                 <control type="image">
                     <posx>0</posx>
                     <posy>0</posy>
@@ -124,7 +129,7 @@
                     <posy>0</posy>
                     <width>64</width>
                     <height>64</height>
-                    <texture>icons/$INFO[ListItem.Property(TorrentStatusIcon)]</texture>
+                    <texture>icons/$INFO[ListItem.Icon]</texture>
                 </control>
                 <control type="label">
                     <posx>90</posx>
@@ -136,10 +141,25 @@
                 <control type="progress">
                     <posx>90</posx>
                     <posy>40</posy>
-                    <width>800</width>
+                    <width>700</width>
                     <height>20</height>
                     <info>ListItem.Property(TorrentProgress)</info>
                 </control>
+                <control type="label"> 
+                    <posx>800</posx> 
+                    <posy>40</posy>
+                    <width>100</width> 
+                    <height>20</height> 
+                    <aligny>center</aligny>
+                    <label>$INFO[ListItem.Property(TorrentProgress)]%</label>
+                </control>
+                <control type="label">
+                    <posx>700</posx> 
+                    <posy>0</posy> 
+                    <width>200</width> 
+                    <height>20</height> 
+                    <label>$INFO[ListItem.Property(DownloadSpeed)] / $INFO[ListItem.Property(UploadSpeed)]</label> 
+                </control> 
             </itemlayout>
             <focusedlayout width="560" height="70">
                 <control type="label">
@@ -171,7 +191,7 @@
                     <posy>0</posy>
                     <width>64</width>
                     <height>64</height>
-                    <texture>icons/$INFO[ListItem.Property(TorrentStatusIcon)]</texture>
+                    <texture>icons/$INFO[ListItem.Icon]</texture>
                 </control>
                 <control type="label">
                     <posx>90</posx>
@@ -189,6 +209,109 @@
                     <info>ListItem.Property(TorrentProgress)</info>
                 </control>
             </focusedlayout>
+        </control>
+        <control type="scrollbar" id="121"> 
+            <posx>1150</posx>
+            <posy>50</posy> 
+            <width>30</width>
+            <height>560</height>
+            <visible>true</visible> 
+            <onleft>120</onleft>
+            <showonepage>false</showonepage> 
+	    <texturesliderbackground border="0,14,0,14">scroll-bar.png</texturesliderbackground>
+            <texturesliderbar border="0,14,0,14">scroll-bar-bar.png</texturesliderbar>
+            <texturesliderbarfocus border="0,14,0,14">scroll-bar-bar-focus.png</texturesliderbarfocus>
+            <textureslidernib>scroll-nib.png</textureslidernib>
+            <textureslidernibfocus>scroll-nib.png</textureslidernibfocus>
+            <orientation>vertical</orientation>
+        </control> 
+        <control type="group"> 
+            <posx>20</posx>
+            <posy>670</posy>
+            <control type="group">
+                <control type="image"> 
+                    <posx>10</posx> 
+                    <width>30</width> 
+                    <height>30</height> 
+                    <texture>connections.png</texture> 
+                </control> 
+                <control type="label" id="151" >
+                    <posx>50</posx>
+                    <posy>0</posy> 
+                    <width>178</width> 
+                    <height>30</height> 
+                    <aligny>center</aligny> 
+                    <label></label>
+                </control> 
+            </control>
+            <control type="group">
+                <posx>248</posx>
+                <control type="image"> 
+                    <posx>10</posx> 
+                    <width>30</width> 
+                    <height>30</height> 
+                    <texture>icons/downloading.png</texture> 
+                </control> 
+                <control type="label" id="152" >
+                    <posx>50</posx>
+                    <posy>0</posy> 
+                    <width>178</width> 
+                    <height>30</height> 
+                    <aligny>center</aligny> 
+                    <label></label>
+                </control> 
+            </control> 
+            <control type="group">
+                <posx>496</posx>
+                <control type="image"> 
+                    <posx>10</posx> 
+                    <width>30</width> 
+                    <height>30</height> 
+                    <texture>icons/seeding.png</texture> 
+                </control> 
+                <control type="label" id="153" >
+                    <posx>50</posx>
+                    <posy>0</posy> 
+                    <width>178</width> 
+                    <height>30</height> 
+                    <aligny>center</aligny> 
+                    <label></label>
+                </control> 
+            </control> 
+            <control type="group">
+                <posx>744</posx>
+                <control type="image"> 
+                    <posx>10</posx> 
+                    <width>30</width> 
+                    <height>30</height> 
+                    <texture>traffic.png</texture> 
+                </control> 
+                <control type="label" id="154" >
+                    <posx>50</posx>
+                    <posy>0</posy> 
+                    <width>178</width> 
+                    <height>30</height> 
+                    <aligny>center</aligny> 
+                    <label></label>
+                </control> 
+            </control> 
+            <control type="group">
+                <posx>992</posx>
+                <control type="image"> 
+                    <posx>10</posx> 
+                    <width>30</width> 
+                    <height>30</height> 
+                    <texture>dht.png</texture> 
+                </control> 
+                <control type="label" id="155" >
+                    <posx>50</posx>
+                    <posy>0</posy> 
+                    <width>178</width> 
+                    <height>30</height> 
+                    <aligny>center</aligny> 
+                    <label></label>
+                </control> 
+            </control> 
         </control>
     </controls>
 </window>
