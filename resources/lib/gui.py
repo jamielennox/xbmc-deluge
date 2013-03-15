@@ -135,8 +135,6 @@ class DelugeGui(xbmcgui.WindowXML):
                 item.setLabel(torrent['name'])
 
                 item.setProperty('TorrentID', key)
-                if not torrent['state'] in DelugeGui.status_icons:
-                    print "Missing icon for", torrent['state']
                 item.setIconImage(DelugeGui.status_icons.get(torrent['state'],
                     'default.png'))
                 item.setProperty('TorrentProgress', "%.2f" % torrent['progress'])
@@ -146,28 +144,18 @@ class DelugeGui(xbmcgui.WindowXML):
                 item.setProperty('UploadSpeed',
                         helpers.fspeed(torrent['upload_payload_rate']))
 
-            tor_list.setEnabled(count > 0)
-
-            session = self.client.update_session()
-            print "session data is", session
-
-            for key, item in zip(torrent_keys, self.items):
-                torrent = torrents[key]
-
-                item.setLabel(torrent['name'])
-
-                item.setProperty('TorrentID', key)
-                item.setProperty('TorrentStatusIcon',
-                        DelugeGui.status_icons.get(torrent['state'], 'default.png'))
-                item.setProperty('TorrentProgress', "%.2f" % torrent['progress'])
-
-                item.setProperty('DownloadSpeed',
-                        helpers.fspeed(torrent['download_payload_rate']))
-                item.setProperty('UploadSpeed',
-                        helpers.fspeed(torrent['upload_payload_rate']))
+                # HACK: Properties do not trigger a redraw when changed
+                # only labels, art and other such builtins. By force changing
+                # the label2 I can force a redraw, it's not nice but I can't see
+                # any other way of invalidating the listitem data. Note also that
+                # the string must change as it won't update if you re-write the
+                # same label back again.
+                if item.getLabel2() == "flip":
+                    item.setLabel2("flop")
+                else:
+                    item.setLabel2("flip")
 
             tor_list.setEnabled(count > 0)
-
             session = self.client.update_session()
 
             download_rate = session['payload_download_rate']
